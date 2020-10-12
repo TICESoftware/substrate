@@ -1760,6 +1760,35 @@ benchmarks! {
 		sbox.invoke();
 	}
 
+	instr_call_indirect {
+		let r in 0 .. API_BENCHMARK_BATCHES;
+		//let num_elements = Contracts::<T>::current_schedule().limits.table_size;
+		let num_elements = 3;
+		use self::code::TableSegment;
+		use body::DynInstr::{RandomI32, Regular};
+		let mut sbox = Sandbox::from(&WasmModule::<T>::from(ModuleDefinition {
+			// We need to make use of the stack here in order to trigger stack height
+			// instrumentation.
+			aux_body: Some(body::plain(vec![
+				Instruction::I64Const(42),
+				Instruction::Drop,
+				Instruction::End,
+			])),
+			call_body: Some(body::repeated_dyn(1, vec![
+				RandomI32(0, num_elements as i32),
+				Regular(Instruction::CallIndirect(0, 0)), // signature 0 (we only have one)
+			])),
+			inject_stack_metering: true,
+			table: Some(TableSegment {
+				num_elements,
+				function_index: 2, // aux
+			}),
+			.. Default::default()
+		}));
+	}: {
+		sbox.invoke();
+	}
+
 	// w_local_get = w_bench - 1 * w_param
 	instr_local_get {
 		let r in 0 .. INSTR_BENCHMARK_BATCHES;
@@ -2001,6 +2030,5 @@ mod tests {
 	create_test!(seal_hash_blake2_256_per_kb);
 	create_test!(seal_hash_blake2_128);
 	create_test!(seal_hash_blake2_128_per_kb);
-	create_test!(instr_memory_current);
-	create_test!(instr_memory_grow);
+	create_test!(instr_call_indirect);
 }

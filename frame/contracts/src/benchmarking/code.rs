@@ -61,6 +61,15 @@ pub struct ModuleDefinition {
 	/// instrumentation should be included in the costs for the individual instructions
 	/// that cause more metering code (only call).
 	pub inject_stack_metering: bool,
+	/// Create a table containing function pointers.
+	pub table: Option<TableSegment>,
+}
+
+pub struct TableSegment {
+	/// How many elements should be created inside the table.
+	pub num_elements: u32,
+	/// The function index with which all tablee elements should be initialized.
+	pub function_index: u32,
 }
 
 pub struct DataSegment {
@@ -170,6 +179,16 @@ impl<T: Trait> From<ModuleDefinition> for WasmModule<T> {
 					.init_expr(Instruction::I64Const(val))
 					.build()
 			}
+		}
+
+		// Add function pointer table
+		if let Some(table) = def.table {
+			contract = contract
+				.table()
+				.with_min(table.num_elements)
+				.with_max(Some(table.num_elements))
+				.with_element(0, vec![table.function_index; table.num_elements as usize])
+				.build();
 		}
 
 		let mut code = contract.build();
