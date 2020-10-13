@@ -3882,6 +3882,7 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "pallet-democracy",
  "pallet-elections-phragmen",
+ "pallet-example-offchain-worker",
  "pallet-finality-tracker",
  "pallet-grandpa",
  "pallet-identity",
